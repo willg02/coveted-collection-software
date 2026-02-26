@@ -12,6 +12,14 @@ import messageRoutes from './routes/messageRoutes.js';
 import leaveRoutes from './routes/leaveRoutes.js';
 import timeRoutes from './routes/timeRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
+import propertyRoutes from './routes/propertyRoutes.js';
+import operationsRoutes from './routes/operationsRoutes.js';
+import salesRoutes from './routes/salesRoutes.js';
+import financialRoutes from './routes/financialRoutes.js';
+import meetingRoutes from './routes/meetingRoutes.js';
+import performanceRoutes from './routes/performanceRoutes.js';
+import onboardingRoutes from './routes/onboardingRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -49,6 +57,14 @@ app.use('/api/messages', authMiddleware, messageRoutes);
 app.use('/api/leave', authMiddleware, leaveRoutes);
 app.use('/api/time', authMiddleware, timeRoutes);
 app.use('/api/tasks', authMiddleware, taskRoutes);
+app.use('/api/properties-v2', authMiddleware, propertyRoutes);
+app.use('/api/operations', authMiddleware, operationsRoutes);
+app.use('/api/leads', authMiddleware, salesRoutes);
+app.use('/api/financials', authMiddleware, financialRoutes);
+app.use('/api/meetings', authMiddleware, meetingRoutes);
+app.use('/api/performance', authMiddleware, performanceRoutes);
+app.use('/api/onboarding', authMiddleware, onboardingRoutes);
+app.use('/api/reports', authMiddleware, reportRoutes);
 
 // ──────────────────────────────────────
 // Legacy mock endpoints (dashboard cards)

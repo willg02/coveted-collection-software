@@ -21,14 +21,20 @@ model User {
   department    String          @default("")
   createdAt     DateTime        @default(now())
 
-  announcements Announcement[]
-  sentMessages  Message[]       @relation("SentMessages")
-  receivedMessages Message[]    @relation("ReceivedMessages")
-  leaveRequests LeaveRequest[]  @relation("LeaveRequests")
-  leaveApprovals LeaveRequest[] @relation("LeaveApprovals")
-  timeEntries   TimeEntry[]
-  tasks         Task[]          @relation("AssignedTasks")
-  createdTasks  Task[]          @relation("CreatedTasks")
+  announcements     Announcement[]
+  sentMessages      Message[]         @relation("SentMessages")
+  receivedMessages  Message[]         @relation("ReceivedMessages")
+  leaveRequests     LeaveRequest[]    @relation("LeaveRequests")
+  leaveApprovals    LeaveRequest[]    @relation("LeaveApprovals")
+  timeEntries       TimeEntry[]
+  tasks             Task[]            @relation("AssignedTasks")
+  createdTasks      Task[]            @relation("CreatedTasks")
+  scheduleEvents    ScheduleEvent[]   @relation("ScheduleEvents")
+  leadAssignments   Lead[]            @relation("LeadAssignments")
+  expenses          Expense[]         @relation("SubmittedExpenses")
+  createdMeetings   Meeting[]         @relation("CreatedMeetings")
+  performanceGoals  PerformanceGoal[]
+  onboardingSteps   OnboardingStep[]
 }
 
 // ── Announcements ──
@@ -103,4 +109,161 @@ model Task {
   creator     User     @relation("CreatedTasks", fields: [creatorId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ── Meetings ──
+
+model Meeting {
+  id           String   @id @default(uuid())
+  title        String
+  date         String   // YYYY-MM-DD
+  time         String?  // HH:MM
+  videoLink    String   @default("")
+  notes        String   @default("")
+  attendeeIds  String[] // array of user IDs
+  createdById  String
+  createdBy    User     @relation("CreatedMeetings", fields: [createdById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ── Performance Goals ──
+
+model PerformanceGoal {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  title       String
+  description String   @default("")
+  category    String   @default("work")        // work | learning | personal
+  status      String   @default("not-started") // not-started | in-progress | completed
+  progress    Int      @default(0)             // 0–100
+  targetDate  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ── Onboarding ──
+
+model OnboardingStep {
+  id          String   @id @default(uuid())
+  assigneeId  String
+  assignee    User     @relation(fields: [assigneeId], references: [id])
+  title       String
+  description String   @default("")
+  category    String   @default("general") // general | access | training | paperwork | setup
+  done        Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+// ── Properties ──
+
+model Property {
+  id          String          @id @default(uuid())
+  name        String
+  address     String          @default("")
+  type        String          @default("short-term") // short-term | long-term | commercial
+  status      String          @default("setup")      // setup | active | inactive
+  units       Int             @default(1)
+  notes       String          @default("")
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  orders      PropertyOrder[]
+  setupTasks  SetupTask[]
+  expenses    Expense[]
+  revenues    Revenue[]
+}
+
+model PropertyOrder {
+  id          String    @id @default(uuid())
+  propertyId  String
+  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  title       String
+  type        String    @default("furniture") // furniture | appliances | supplies | renovation | other
+  vendor      String    @default("")
+  cost        Float     @default(0)
+  status      String    @default("pending")   // pending | ordered | delivered | installed
+  notes       String    @default("")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model SetupTask {
+  id          String    @id @default(uuid())
+  propertyId  String
+  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  title       String
+  done        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+// ── Operations ──
+
+model SOP {
+  id          String    @id @default(uuid())
+  title       String
+  category    String    @default("general") // general | cleaning | maintenance | checkin | checkout | safety
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ScheduleEvent {
+  id          String    @id @default(uuid())
+  title       String
+  date        String    // YYYY-MM-DD
+  startTime   String?   // HH:MM
+  endTime     String?   // HH:MM
+  type        String    @default("task") // task | inspection | meeting | maintenance | other
+  assigneeId  String?
+  assignee    User?     @relation("ScheduleEvents", fields: [assigneeId], references: [id])
+  notes       String    @default("")
+  done        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+// ── Sales / CRM ──
+
+model Lead {
+  id          String    @id @default(uuid())
+  name        String
+  email       String    @default("")
+  phone       String    @default("")
+  source      String    @default("referral") // referral | website | social | direct | other
+  stage       String    @default("new")       // new | contacted | qualified | proposal | won | lost
+  value       Float     @default(0)
+  notes       String    @default("")
+  assigneeId  String?
+  assignee    User?     @relation("LeadAssignments", fields: [assigneeId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ── Financials ──
+
+model Expense {
+  id              String    @id @default(uuid())
+  title           String
+  amount          Float
+  category        String    @default("other") // utilities | supplies | maintenance | payroll | marketing | other
+  date            String    // YYYY-MM-DD
+  propertyId      String?
+  property        Property? @relation(fields: [propertyId], references: [id])
+  notes           String    @default("")
+  submittedById   String
+  submittedBy     User      @relation("SubmittedExpenses", fields: [submittedById], references: [id])
+  createdAt       DateTime  @default(now())
+}
+
+model Revenue {
+  id          String    @id @default(uuid())
+  title       String
+  amount      Float
+  category    String    @default("booking") // booking | rental | other
+  date        String    // YYYY-MM-DD
+  propertyId  String?
+  property    Property? @relation(fields: [propertyId], references: [id])
+  notes       String    @default("")
+  createdAt   DateTime  @default(now())
 }
