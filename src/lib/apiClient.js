@@ -1,8 +1,5 @@
-// Dev: Vite proxies /api → localhost:3001
-// Prod: call Railway directly
-const BASE_URL = import.meta.env.DEV
-  ? '/api'
-  : (import.meta.env.VITE_API_URL || 'https://coveted-collection-software-production.up.railway.app') + '/api';
+// VITE_API_URL is set in .env.production (Railway URL) and empty in dev (uses Vite proxy)
+const BASE_URL = (import.meta.env.VITE_API_URL || '') + '/api';
 
 function getToken() {
   return localStorage.getItem('cc_token');
