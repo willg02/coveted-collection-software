@@ -31,6 +31,11 @@ app.use(cors({
 app.use(express.json());
 
 // ──────────────────────────────────────
+// Health check (Railway uses this)
+// ──────────────────────────────────────
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
+// ──────────────────────────────────────
 // Public routes
 // ──────────────────────────────────────
 app.use('/api/auth', authRoutes);
