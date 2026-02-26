@@ -1,4 +1,6 @@
-const BASE_URL = '/api';
+// In production (GitHub Pages) use the deployed Railway URL;
+// in dev, Vite proxies /api → localhost:3001
+const BASE_URL = (import.meta.env.VITE_API_URL ?? '') + '/api';
 
 function getToken() {
   return localStorage.getItem('cc_token');

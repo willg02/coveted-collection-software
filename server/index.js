@@ -16,7 +16,18 @@ import taskRoutes from './routes/taskRoutes.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://willg02.github.io',
+];
+app.use(cors({
+  origin: (origin, cb) => {
+    // allow server-to-server requests (no origin) and listed origins
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 // ──────────────────────────────────────

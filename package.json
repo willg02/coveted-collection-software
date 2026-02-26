@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "tsx server/index.js"
+    "server": "tsx server/index.js",
+    "start": "tsx server/index.js",
+    "postinstall": "prisma generate"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
