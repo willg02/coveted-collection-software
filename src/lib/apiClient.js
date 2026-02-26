@@ -1,6 +1,8 @@
-// In production (GitHub Pages) use the deployed Railway URL;
-// in dev, Vite proxies /api → localhost:3001
-const BASE_URL = (import.meta.env.VITE_API_URL ?? '') + '/api';
+// Dev: Vite proxies /api → localhost:3001
+// Prod: call Railway directly
+const BASE_URL = import.meta.env.DEV
+  ? '/api'
+  : (import.meta.env.VITE_API_URL ?? 'https://coveted-collection-software-production.up.railway.app') + '/api';
 
 function getToken() {
   return localStorage.getItem('cc_token');
