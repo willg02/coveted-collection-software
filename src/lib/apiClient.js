@@ -26,6 +26,9 @@ const api = {
   // User
   getUser: () => request('/user/me'),
   getAllUsers: () => request('/user/all'),
+  changePassword: (data) => request('/user/password', { method: 'PATCH', body: JSON.stringify(data) }),
+  inviteUser: (data) => request('/user/invite', { method: 'POST', body: JSON.stringify(data) }),
+  deleteUser: (id) => request(`/user/${id}`, { method: 'DELETE' }),
 
   // Announcements
   getAnnouncements: () => request('/announcements'),

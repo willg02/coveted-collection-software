@@ -486,10 +486,189 @@ function PerformanceView() {
   return (<div className="hr-portal__empty"><div className="hr-portal__empty-icon"><TrendingUp size={28} /></div><p>No performance reviews</p></div>);
 }
 function MyProfileView() {
-  return (<div className="hr-portal__empty"><div className="hr-portal__empty-icon"><User size={28} /></div><p>Profile settings coming soon</p></div>);
+  const { user, logout } = useAuth();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [status, setStatus] = useState(null); // { type: 'success'|'error', msg }
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setStatus(null);
+    if (newPassword !== confirm) return setStatus({ type: 'error', msg: 'New passwords do not match' });
+    if (newPassword.length < 6) return setStatus({ type: 'error', msg: 'Password must be at least 6 characters' });
+    setLoading(true);
+    try {
+      await api.changePassword({ currentPassword, newPassword });
+      setStatus({ type: 'success', msg: 'Password updated successfully!' });
+      setCurrentPassword(''); setNewPassword(''); setConfirm('');
+    } catch (err) {
+      setStatus({ type: 'error', msg: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="hr-profile__card">
+        <div className="hr-profile__avatar">{user?.name?.split(' ').map(n => n[0]).join('') || '?'}</div>
+        <div className="hr-profile__info">
+          <h2 className="hr-profile__name">{user?.name}</h2>
+          <p className="hr-profile__email">{user?.email}</p>
+          <span className="hr-badge" style={{ textTransform: 'capitalize' }}>{user?.role}</span>
+          {user?.department && <span className="hr-profile__dept">{user.department}</span>}
+        </div>
+      </div>
+
+      <h3 className="hr-profile__section-title">Change Password</h3>
+      {status && (
+        <p className={`hr-profile__status hr-profile__status--${status.type}`}>{status.msg}</p>
+      )}
+      <form className="hr-form" onSubmit={submit}>
+        <div className="hr-form__row">
+          <input
+            type="password"
+            className="hr-form__input"
+            placeholder="Current password"
+            value={currentPassword}
+            onChange={e => setCurrentPassword(e.target.value)}
+            required
+          />
+        </div>
+        <div className="hr-form__row">
+          <input
+            type="password"
+            className="hr-form__input"
+            placeholder="New password"
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+            required
+          />
+        </div>
+        <div className="hr-form__row">
+          <input
+            type="password"
+            className="hr-form__input"
+            placeholder="Confirm new password"
+            value={confirm}
+            onChange={e => setConfirm(e.target.value)}
+            required
+          />
+        </div>
+        <div className="hr-form__actions">
+          <button type="submit" className="hr-portal__new-btn" disabled={loading}>
+            {loading ? 'Saving…' : 'Update Password'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 }
 function DirectoryView() {
-  return (<div className="hr-portal__empty"><div className="hr-portal__empty-icon"><Users size={28} /></div><p>Employee directory is empty</p></div>);
+  const { user } = useAuth();
+  const [members, setMembers] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('employee');
+  const [department, setDepartment] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const load = useCallback(() => { api.getAllUsers().then(setMembers).catch(() => {}); }, []);
+  useEffect(load, [load]);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError(''); setSuccess('');
+    try {
+      await api.inviteUser({ name, email, password, role, department });
+      setSuccess(`${name} has been added!`);
+      setName(''); setEmail(''); setPassword(''); setRole('employee'); setDepartment('');
+      setShowForm(false);
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const remove = async (id) => {
+    if (!confirm('Remove this user?')) return;
+    await api.deleteUser(id);
+    load();
+  };
+
+  const roleColors = { admin: '#7c3aed', manager: '#2563eb', employee: '#64748b' };
+
+  return (
+    <div>
+      {success && <p className="hr-profile__status hr-profile__status--success">{success}</p>}
+
+      {(user?.role === 'admin' || user?.role === 'manager') && (
+        showForm ? (
+          <form className="hr-form" onSubmit={submit}>
+            {error && <p className="hr-profile__status hr-profile__status--error">{error}</p>}
+            <div className="hr-form__row hr-form__row--split">
+              <input className="hr-form__input" placeholder="Full name" value={name} onChange={e => setName(e.target.value)} required />
+              <input type="email" className="hr-form__input" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+            </div>
+            <div className="hr-form__row hr-form__row--split">
+              <input type="password" className="hr-form__input" placeholder="Temporary password" value={password} onChange={e => setPassword(e.target.value)} required />
+              <select className="hr-form__input" value={role} onChange={e => setRole(e.target.value)}>
+                <option value="employee">Employee</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div className="hr-form__row">
+              <input className="hr-form__input" placeholder="Department (optional)" value={department} onChange={e => setDepartment(e.target.value)} />
+            </div>
+            <div className="hr-form__actions">
+              <button type="submit" className="hr-portal__new-btn"><Plus size={16} /> Add Member</button>
+              <button type="button" className="hr-form__cancel" onClick={() => { setShowForm(false); setError(''); }}>Cancel</button>
+            </div>
+          </form>
+        ) : (
+          <button className="hr-portal__new-btn" onClick={() => setShowForm(true)}>
+            <Plus size={18} /> Invite Team Member
+          </button>
+        )
+      )}
+
+      {members.length === 0 ? (
+        <div className="hr-portal__empty">
+          <div className="hr-portal__empty-icon"><Users size={28} /></div>
+          <p>No team members yet</p>
+        </div>
+      ) : (
+        <div className="hr-directory">
+          {members.map(m => (
+            <div className="hr-directory__card" key={m.id}>
+              <div className="hr-directory__avatar">{m.name.split(' ').map(n => n[0]).join('')}</div>
+              <div className="hr-directory__info">
+                <strong>{m.name}</strong>
+                <span>{m.email}</span>
+                {m.department && <span className="hr-directory__dept">{m.department}</span>}
+              </div>
+              <div className="hr-directory__meta">
+                <span className="hr-badge" style={{ background: roleColors[m.role] || '#64748b', color: '#fff' }}>
+                  {m.role}
+                </span>
+                {user?.role === 'admin' && m.id !== user.id && (
+                  <button className="hr-list__delete" onClick={() => remove(m.id)} title="Remove user">
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 function OrgChartView() {
   return (<div className="hr-portal__empty"><div className="hr-portal__empty-icon"><GitBranch size={28} /></div><p>Org chart not configured</p></div>);
