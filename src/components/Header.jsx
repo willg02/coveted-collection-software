@@ -1,6 +1,9 @@
-import { Bell, Search } from 'lucide-react';
+import { Bell, Search, LogOut } from 'lucide-react';
+import { useAuth } from '../lib/AuthContext';
 
-export default function Header({ userName = 'Will Gibson' }) {
+export default function Header() {
+  const { user, logout } = useAuth();
+  const userName = user?.name || 'User';
   const initials = userName
     .split(' ')
     .map((n) => n[0])
@@ -19,6 +22,9 @@ export default function Header({ userName = 'Will Gibson' }) {
         <div className="header__avatar" title={userName}>
           {initials}
         </div>
+        <button className="header__icon-btn" aria-label="Log out" onClick={logout} title="Log out">
+          <LogOut size={20} />
+        </button>
       </div>
     </header>
   );

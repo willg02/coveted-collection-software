@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ── Users & Auth ──
+
+model User {
+  id            String          @id @default(uuid())
+  name          String
+  email         String          @unique
+  password      String
+  role          String          @default("employee") // employee | manager | admin
+  department    String          @default("")
+  createdAt     DateTime        @default(now())
+
+  announcements Announcement[]
+  sentMessages  Message[]       @relation("SentMessages")
+  receivedMessages Message[]    @relation("ReceivedMessages")
+  leaveRequests LeaveRequest[]  @relation("LeaveRequests")
+  leaveApprovals LeaveRequest[] @relation("LeaveApprovals")
+  timeEntries   TimeEntry[]
+  tasks         Task[]          @relation("AssignedTasks")
+  createdTasks  Task[]          @relation("CreatedTasks")
+}
+
+// ── Announcements ──
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Messages ──
+
+model Message {
+  id         String   @id @default(uuid())
+  subject    String
+  content    String
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+// ── Leave Requests ──
+
+model LeaveRequest {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation("LeaveRequests", fields: [userId], references: [id])
+  type       String   // vacation | sick | personal | other
+  startDate  String
+  endDate    String
+  reason     String   @default("")
+  status     String   @default("pending") // pending | approved | denied
+  reviewerId String?
+  reviewer   User?    @relation("LeaveApprovals", fields: [reviewerId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ── Time Tracking ──
+
+model TimeEntry {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      String   // YYYY-MM-DD
+  hours     Float
+  note      String   @default("")
+  clockIn   String?  // HH:MM
+  clockOut  String?  // HH:MM
+  createdAt DateTime @default(now())
+}
+
+// ── Tasks ──
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @default("")
+  status      String   @default("todo") // todo | in-progress | done
+  priority    String   @default("medium") // low | medium | high
+  dueDate     String?
+  assigneeId  String
+  assignee    User     @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  creatorId   String
+  creator     User     @relation("CreatedTasks", fields: [creatorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
