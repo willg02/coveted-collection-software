@@ -166,6 +166,8 @@ model Property {
   type        String          @default("short-term") // short-term | long-term | commercial
   status      String          @default("setup")      // setup | active | inactive
   units       Int             @default(1)
+  beds        Int             @default(0)
+  baths       Float           @default(0)
   notes       String          @default("")
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt

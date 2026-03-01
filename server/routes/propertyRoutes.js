@@ -38,10 +38,19 @@ router.get('/:id', async (req, res) => {
 // POST create property
 router.post('/', async (req, res) => {
   try {
-    const { name, address, type, status, units, notes } = req.body;
+    const { name, address, type, status, units, beds, baths, notes } = req.body;
     if (!name) return res.status(400).json({ error: 'Name is required' });
     const property = await prisma.property.create({
-      data: { name, address: address || '', type: type || 'short-term', status: status || 'setup', units: units ? parseInt(units) : 1, notes: notes || '' },
+      data: {
+        name,
+        address: address || '',
+        type: type || 'short-term',
+        status: status || 'setup',
+        units: units ? parseInt(units) : 1,
+        beds: beds !== undefined ? parseInt(beds) : 0,
+        baths: baths !== undefined ? parseFloat(baths) : 0,
+        notes: notes || '',
+      },
     });
     res.status(201).json(property);
   } catch (err) {
@@ -52,16 +61,18 @@ router.post('/', async (req, res) => {
 // PATCH update property
 router.patch('/:id', async (req, res) => {
   try {
-    const { name, address, type, status, units, notes } = req.body;
+    const { name, address, type, status, units, beds, baths, notes } = req.body;
     const property = await prisma.property.update({
       where: { id: req.params.id },
       data: {
-        ...(name !== undefined && { name }),
+        ...(name    !== undefined && { name }),
         ...(address !== undefined && { address }),
-        ...(type !== undefined && { type }),
-        ...(status !== undefined && { status }),
-        ...(units !== undefined && { units: parseInt(units) }),
-        ...(notes !== undefined && { notes }),
+        ...(type    !== undefined && { type }),
+        ...(status  !== undefined && { status }),
+        ...(units   !== undefined && { units: parseInt(units) }),
+        ...(beds    !== undefined && { beds: parseInt(beds) }),
+        ...(baths   !== undefined && { baths: parseFloat(baths) }),
+        ...(notes   !== undefined && { notes }),
       },
     });
     res.json(property);

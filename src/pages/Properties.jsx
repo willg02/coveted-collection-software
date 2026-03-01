@@ -1,162 +1,31 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import {
   Building2,
+  MapPin,
+  BedDouble,
+  Bath,
   Plus,
   Trash2,
-  Info,
+  Search,
+  RefreshCw,
   ChevronDown,
   ChevronUp,
-  CheckSquare,
   ShoppingCart,
   ClipboardList,
   Check,
+  X,
+  SlidersHorizontal,
 } from 'lucide-react';
 import api from '../lib/apiClient';
 
 /* ─────────────────────────────────────────
-   Property Status Badge
+   Status badge colours
 ───────────────────────────────────────── */
-const statusColors = {
+const STATUS_COLORS = {
   setup:    { bg: '#fff7ed', color: '#c2410c' },
-  active:   { bg: '#f0fdf4', color: '#15803d' },
-  inactive: { bg: '#f8fafc', color: '#64748b' },
+  active:   { bg: '#dcfce7', color: '#16a34a' },
+  inactive: { bg: '#f1f5f9', color: '#64748b' },
 };
-
-function StatusBadge({ status }) {
-  const s = statusColors[status] || statusColors.inactive;
-  return (
-    <span className="hr-badge" style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}22` }}>
-      {status}
-    </span>
-  );
-}
-
-/* ─────────────────────────────────────────
-   Properties List view
-───────────────────────────────────────── */
-function PropertiesListView() {
-  const [properties, setProperties] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [expanded, setExpanded] = useState({});
-  const [activeTab, setActiveTab] = useState({});
-  const [form, setForm] = useState({ name: '', address: '', type: 'short-term', status: 'setup', units: 1, notes: '' });
-
-  const load = useCallback(() => {
-    api.getPropertiesV2().then(setProperties).catch(() => {});
-  }, []);
-  useEffect(load, [load]);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    await api.createProperty(form);
-    setForm({ name: '', address: '', type: 'short-term', status: 'setup', units: 1, notes: '' });
-    setShowForm(false);
-    load();
-  };
-
-  const remove = async (id) => {
-    if (!confirm('Delete this property and all its data?')) return;
-    await api.deleteProperty(id);
-    load();
-  };
-
-  const toggleExpand = (id) => setExpanded(p => ({ ...p, [id]: !p[id] }));
-  const setTab = (id, tab) => setActiveTab(p => ({ ...p, [id]: tab }));
-  const getTab = (id) => activeTab[id] || 'orders';
-
-  return (
-    <div>
-      {showForm ? (
-        <form className="hr-form" onSubmit={submit}>
-          <div className="hr-form__row hr-form__row--split">
-            <input className="hr-form__input" placeholder="Property name *" value={form.name}
-              onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
-            <input className="hr-form__input" placeholder="Address" value={form.address}
-              onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
-          </div>
-          <div className="hr-form__row hr-form__row--split">
-            <select className="hr-form__input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
-              <option value="short-term">Short-Term Rental</option>
-              <option value="long-term">Long-Term Rental</option>
-              <option value="commercial">Commercial</option>
-            </select>
-            <select className="hr-form__input" value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
-              <option value="setup">In Setup</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-          <div className="hr-form__row hr-form__row--split">
-            <input type="number" min="1" className="hr-form__input" placeholder="Units" value={form.units}
-              onChange={e => setForm(p => ({ ...p, units: e.target.value }))} />
-            <input className="hr-form__input" placeholder="Notes (optional)" value={form.notes}
-              onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
-          </div>
-          <div className="hr-form__actions">
-            <button type="submit" className="hr-portal__new-btn"><Plus size={16} /> Add Property</button>
-            <button type="button" className="hr-form__cancel" onClick={() => setShowForm(false)}>Cancel</button>
-          </div>
-        </form>
-      ) : (
-        <button className="hr-portal__new-btn" onClick={() => setShowForm(true)}>
-          <Plus size={18} /> Add Property
-        </button>
-      )}
-
-      {properties.length === 0 ? (
-        <div className="hr-portal__empty">
-          <div className="hr-portal__empty-icon"><Building2 size={28} /></div>
-          <p>No properties yet. Add your first property above.</p>
-        </div>
-      ) : (
-        <div className="prop-list">
-          {properties.map(prop => (
-            <div className="prop-card" key={prop.id}>
-              <div className="prop-card__header" onClick={() => toggleExpand(prop.id)}>
-                <div className="prop-card__title-group">
-                  <div className="prop-card__icon"><Building2 size={20} /></div>
-                  <div>
-                    <div className="prop-card__name">{prop.name}</div>
-                    {prop.address && <div className="prop-card__address">{prop.address}</div>}
-                  </div>
-                </div>
-                <div className="prop-card__meta">
-                  <StatusBadge status={prop.status} />
-                  <span className="hr-badge" style={{ background: '#f1f5f9', color: '#475569' }}>{prop.type}</span>
-                  <span className="prop-card__units">{prop.units} unit{prop.units !== 1 ? 's' : ''}</span>
-                  <button className="hr-list__delete" onClick={e => { e.stopPropagation(); remove(prop.id); }}><Trash2 size={14} /></button>
-                  {expanded[prop.id] ? <ChevronUp size={16} color="#94a3b8" /> : <ChevronDown size={16} color="#94a3b8" />}
-                </div>
-              </div>
-
-              {expanded[prop.id] && (
-                <div className="prop-card__body">
-                  <div className="prop-tabs">
-                    <button className={`prop-tab${getTab(prop.id) === 'orders' ? ' prop-tab--active' : ''}`}
-                      onClick={() => setTab(prop.id, 'orders')}>
-                      <ShoppingCart size={14} /> Orders ({prop.orders?.length || 0})
-                    </button>
-                    <button className={`prop-tab${getTab(prop.id) === 'tasks' ? ' prop-tab--active' : ''}`}
-                      onClick={() => setTab(prop.id, 'tasks')}>
-                      <ClipboardList size={14} /> Setup Tasks ({prop.setupTasks?.length || 0})
-                    </button>
-                  </div>
-
-                  {getTab(prop.id) === 'orders' && (
-                    <OrdersPanel propertyId={prop.id} orders={prop.orders || []} onRefresh={load} />
-                  )}
-                  {getTab(prop.id) === 'tasks' && (
-                    <SetupTasksPanel propertyId={prop.id} tasks={prop.setupTasks || []} onRefresh={load} />
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ─────────────────────────────────────────
    Orders sub-panel
@@ -202,7 +71,6 @@ function OrdersPanel({ propertyId, orders, onRefresh }) {
           <span className="prop-orders__total">Total: ${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
         </div>
       )}
-
       {showForm ? (
         <form className="hr-form" style={{ marginTop: 12 }} onSubmit={submit}>
           <div className="hr-form__row hr-form__row--split">
@@ -223,20 +91,14 @@ function OrdersPanel({ propertyId, orders, onRefresh }) {
               value={form.cost} onChange={e => setForm(p => ({ ...p, cost: e.target.value }))} />
           </div>
           <div className="hr-form__actions">
-            <button type="submit" className="hr-portal__new-btn" style={{ marginBottom: 0 }}>
-              <Plus size={14} /> Add Order
-            </button>
+            <button type="submit" className="hr-portal__new-btn" style={{ marginBottom: 0 }}><Plus size={14} /> Add Order</button>
             <button type="button" className="hr-form__cancel" onClick={() => setShowForm(false)}>Cancel</button>
           </div>
         </form>
       ) : (
-        <button className="prop-add-btn" onClick={() => setShowForm(true)}>
-          <Plus size={14} /> Add Order
-        </button>
+        <button className="prop-add-btn" onClick={() => setShowForm(true)}><Plus size={14} /> Add Order</button>
       )}
-
       {orders.length === 0 && !showForm && <p className="prop-empty-hint">No orders yet.</p>}
-
       <div className="prop-orders">
         {orders.map(o => {
           const sc = orderStatusColors[o.status] || orderStatusColors.pending;
@@ -248,14 +110,9 @@ function OrdersPanel({ propertyId, orders, onRefresh }) {
               </div>
               <div className="prop-order-row__meta">
                 {o.cost > 0 && <span className="prop-order-row__cost">${o.cost.toLocaleString()}</span>}
-                <button
-                  className="hr-badge"
+                <button className="hr-badge"
                   style={{ background: sc.bg, color: sc.color, border: `1px solid ${sc.color}44`, cursor: 'pointer' }}
-                  title="Click to advance status"
-                  onClick={() => cycleStatus(o.id, o.status)}
-                >
-                  {o.status}
-                </button>
+                  title="Click to advance status" onClick={() => cycleStatus(o.id, o.status)}>{o.status}</button>
                 <button className="hr-list__delete" onClick={() => remove(o.id)}><Trash2 size={13} /></button>
               </div>
             </div>
@@ -277,20 +134,11 @@ function SetupTasksPanel({ propertyId, tasks, onRefresh }) {
     e.preventDefault();
     if (!title.trim()) return;
     await api.createSetupTask(propertyId, { title });
-    setTitle('');
-    setShowForm(false);
-    onRefresh();
+    setTitle(''); setShowForm(false); onRefresh();
   };
 
-  const toggle = async (taskId, done) => {
-    await api.updateSetupTask(propertyId, taskId, { done: !done });
-    onRefresh();
-  };
-
-  const remove = async (taskId) => {
-    await api.deleteSetupTask(propertyId, taskId);
-    onRefresh();
-  };
+  const toggle = async (taskId, done) => { await api.updateSetupTask(propertyId, taskId, { done: !done }); onRefresh(); };
+  const remove = async (taskId) => { await api.deleteSetupTask(propertyId, taskId); onRefresh(); };
 
   const completed = tasks.filter(t => t.done).length;
 
@@ -304,7 +152,6 @@ function SetupTasksPanel({ propertyId, tasks, onRefresh }) {
           </div>
         </div>
       )}
-
       {showForm ? (
         <form className="hr-form" style={{ marginTop: 12 }} onSubmit={submit}>
           <div className="hr-form__row">
@@ -312,20 +159,14 @@ function SetupTasksPanel({ propertyId, tasks, onRefresh }) {
               onChange={e => setTitle(e.target.value)} autoFocus required />
           </div>
           <div className="hr-form__actions">
-            <button type="submit" className="hr-portal__new-btn" style={{ marginBottom: 0 }}>
-              <Plus size={14} /> Add Task
-            </button>
+            <button type="submit" className="hr-portal__new-btn" style={{ marginBottom: 0 }}><Plus size={14} /> Add Task</button>
             <button type="button" className="hr-form__cancel" onClick={() => setShowForm(false)}>Cancel</button>
           </div>
         </form>
       ) : (
-        <button className="prop-add-btn" onClick={() => setShowForm(true)}>
-          <Plus size={14} /> Add Task
-        </button>
+        <button className="prop-add-btn" onClick={() => setShowForm(true)}><Plus size={14} /> Add Task</button>
       )}
-
       {tasks.length === 0 && !showForm && <p className="prop-empty-hint">No setup tasks yet.</p>}
-
       <div className="prop-task-list">
         {tasks.map(t => (
           <div className={`prop-task-row${t.done ? ' prop-task-row--done' : ''}`} key={t.id}>
@@ -342,98 +183,225 @@ function SetupTasksPanel({ propertyId, tasks, onRefresh }) {
 }
 
 /* ─────────────────────────────────────────
-   Summary / Stats view
+   Main Properties page
 ───────────────────────────────────────── */
-function SummaryView() {
-  const [properties, setProperties] = useState([]);
-  useEffect(() => { api.getPropertiesV2().then(setProperties).catch(() => {}); }, []);
-
-  const total = properties.length;
-  const active = properties.filter(p => p.status === 'active').length;
-  const setup = properties.filter(p => p.status === 'setup').length;
-  const totalOrders = properties.reduce((s, p) => s + (p.orders?.length || 0), 0);
-  const pendingOrders = properties.reduce((s, p) => s + (p.orders?.filter(o => o.status === 'pending').length || 0), 0);
-  const totalCost = properties.reduce((s, p) => s + (p.orders?.reduce((os, o) => os + (o.cost || 0), 0) || 0), 0);
-
-  return (
-    <div>
-      <div className="prop-stat-grid">
-        <div className="prop-stat"><div className="prop-stat__val">{total}</div><div className="prop-stat__label">Properties</div></div>
-        <div className="prop-stat"><div className="prop-stat__val">{active}</div><div className="prop-stat__label">Active</div></div>
-        <div className="prop-stat"><div className="prop-stat__val">{setup}</div><div className="prop-stat__label">In Setup</div></div>
-        <div className="prop-stat"><div className="prop-stat__val">{totalOrders}</div><div className="prop-stat__label">Total Orders</div></div>
-        <div className="prop-stat"><div className="prop-stat__val">{pendingOrders}</div><div className="prop-stat__label">Pending Orders</div></div>
-        <div className="prop-stat"><div className="prop-stat__val">${totalCost.toLocaleString()}</div><div className="prop-stat__label">Order Value</div></div>
-      </div>
-
-      {properties.length > 0 && (
-        <>
-          <h3 className="hr-profile__section-title" style={{ marginTop: 28 }}>Setup Progress</h3>
-          <div className="prop-list">
-            {properties.filter(p => p.setupTasks?.length > 0).map(p => {
-              const tasks = p.setupTasks || [];
-              const done = tasks.filter(t => t.done).length;
-              const pct = tasks.length > 0 ? Math.round((done / tasks.length) * 100) : 0;
-              return (
-                <div className="prop-progress-row" key={p.id}>
-                  <div className="prop-progress-row__info">
-                    <span>{p.name}</span>
-                    <StatusBadge status={p.status} />
-                  </div>
-                  <div className="prop-progress-row__bar-wrap">
-                    <div className="prop-progress">
-                      <div className="prop-progress__bar" style={{ width: `${pct}%` }} />
-                    </div>
-                    <span className="prop-progress-row__pct">{done}/{tasks.length} tasks · {pct}%</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────
-   View registry & Properties portal shell
-───────────────────────────────────────── */
-const views = {
-  properties: { label: 'Properties',       icon: Building2,     component: PropertiesListView },
-  summary:    { label: 'Portfolio Summary', icon: ClipboardList, component: SummaryView },
-};
+const EMPTY_FORM = { name: '', address: '', type: 'short-term', status: 'active', beds: 0, baths: 0, units: 1, notes: '' };
 
 export default function Properties() {
-  const [activeView, setActiveView] = useState('properties');
-  const ActiveComponent = views[activeView].component;
+  const [properties, setProperties]     = useState([]);
+  const [search, setSearch]             = useState('');
+  const [typeFilter, setTypeFilter]     = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [bedsFilter, setBedsFilter]     = useState('all');
+  const [bathsFilter, setBathsFilter]   = useState('all');
+  const [sortBy, setSortBy]             = useState('name');
+  const [selectedId, setSelectedId]     = useState(null);
+  const [detailTab, setDetailTab]       = useState('orders');
+  const [showAddForm, setShowAddForm]   = useState(false);
+  const [form, setForm]                 = useState(EMPTY_FORM);
+
+  const load = useCallback(() => { api.getPropertiesV2().then(setProperties).catch(() => {}); }, []);
+  useEffect(load, [load]);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    await api.createProperty(form);
+    setForm(EMPTY_FORM); setShowAddForm(false); load();
+  };
+
+  const remove = async (id, e) => {
+    e.stopPropagation();
+    if (!confirm('Delete this property and all its data?')) return;
+    await api.deleteProperty(id);
+    if (selectedId === id) setSelectedId(null);
+    load();
+  };
+
+  const selectCard = (id) => { setSelectedId(p => p === id ? null : id); setDetailTab('orders'); };
+
+  /* Filtering + sorting */
+  let filtered = [...properties];
+  if (search) {
+    const q = search.toLowerCase();
+    filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || p.address.toLowerCase().includes(q));
+  }
+  if (typeFilter   !== 'all') filtered = filtered.filter(p => p.type   === typeFilter);
+  if (statusFilter !== 'all') filtered = filtered.filter(p => p.status === statusFilter);
+  if (bedsFilter   !== 'all') filtered = filtered.filter(p => (p.beds  || 0) >= parseInt(bedsFilter));
+  if (bathsFilter  !== 'all') filtered = filtered.filter(p => (p.baths || 0) >= parseFloat(bathsFilter));
+  filtered.sort((a, b) => {
+    if (sortBy === 'name')   return a.name.localeCompare(b.name);
+    if (sortBy === 'status') return a.status.localeCompare(b.status);
+    if (sortBy === 'beds')   return (b.beds || 0) - (a.beds || 0);
+    if (sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
+    return 0;
+  });
+
+  const selected = properties.find(p => p.id === selectedId);
 
   return (
-    <div className="hr-portal">
-      <aside className="hr-portal__sidebar">
-        <div className="hr-portal__sidebar-header">
-          <h2 className="hr-portal__sidebar-title">Properties</h2>
-          <span className="hr-portal__sidebar-subtitle">Portfolio Management</span>
+    <div className="prop-page">
+
+      {/* Header */}
+      <div className="prop-page__hdr">
+        <div className="prop-page__hdr-left">
+          <Building2 size={22} />
+          <h1 className="prop-page__title">Properties</h1>
+          <span className="prop-page__count">{properties.length}</span>
         </div>
-        <nav className="hr-portal__nav">
-          {Object.entries(views).map(([key, v]) => {
-            const Icon = v.icon;
+        <div className="prop-page__actions">
+          <button className="prop-btn-guesty" onClick={() => alert('Guesty sync coming soon!')}>
+            <RefreshCw size={14} /> Sync from Guesty
+          </button>
+          <button className="prop-btn-import" onClick={() => { setShowAddForm(s => !s); setSelectedId(null); }}>
+            <Plus size={14} /> {showAddForm ? 'Cancel' : 'Import Properties'}
+          </button>
+        </div>
+      </div>
+
+      {/* Add form */}
+      {showAddForm && (
+        <div className="prop-add-form-wrap">
+          <form className="hr-form" onSubmit={submit}>
+            <div className="hr-form__row hr-form__row--split">
+              <input className="hr-form__input" placeholder="Property name *" value={form.name}
+                onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
+              <input className="hr-form__input" placeholder="Address" value={form.address}
+                onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
+            </div>
+            <div className="hr-form__row hr-form__row--split">
+              <select className="hr-form__input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
+                <option value="short-term">Short-Term Rental</option>
+                <option value="long-term">Long-Term Rental</option>
+                <option value="commercial">Commercial</option>
+              </select>
+              <select className="hr-form__input" value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
+                <option value="setup">In Setup</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div className="hr-form__row hr-form__row--split">
+              <input type="number" min="0" className="hr-form__input" placeholder="Bedrooms"
+                value={form.beds} onChange={e => setForm(p => ({ ...p, beds: e.target.value }))} />
+              <input type="number" min="0" step="0.5" className="hr-form__input" placeholder="Bathrooms"
+                value={form.baths} onChange={e => setForm(p => ({ ...p, baths: e.target.value }))} />
+            </div>
+            <div className="hr-form__actions">
+              <button type="submit" className="hr-portal__new-btn"><Plus size={16} /> Add Property</button>
+              <button type="button" className="hr-form__cancel" onClick={() => setShowAddForm(false)}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="prop-search-wrap">
+        <Search size={16} className="prop-search-icon" />
+        <input className="prop-search-input"
+          placeholder="Search properties by name or address..."
+          value={search} onChange={e => setSearch(e.target.value)} />
+        {search && <button className="prop-search-clear" onClick={() => setSearch('')}><X size={14} /></button>}
+      </div>
+
+      {/* Filters */}
+      <div className="prop-filter-bar">
+        <span className="prop-filter-bar__label"><SlidersHorizontal size={13} /> Filters:</span>
+        <select className="prop-filter-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+          <option value="all">All Types</option>
+          <option value="short-term">Short-Term</option>
+          <option value="long-term">Long-Term</option>
+          <option value="commercial">Commercial</option>
+        </select>
+        <select className="prop-filter-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="all">All Status</option>
+          <option value="setup">Setup</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <select className="prop-filter-select" value={bedsFilter} onChange={e => setBedsFilter(e.target.value)}>
+          <option value="all">All Beds</option>
+          <option value="1">1+ Beds</option>
+          <option value="2">2+ Beds</option>
+          <option value="3">3+ Beds</option>
+          <option value="4">4+ Beds</option>
+        </select>
+        <select className="prop-filter-select" value={bathsFilter} onChange={e => setBathsFilter(e.target.value)}>
+          <option value="all">All Baths</option>
+          <option value="1">1+ Baths</option>
+          <option value="2">2+ Baths</option>
+          <option value="3">3+ Baths</option>
+        </select>
+        <div className="prop-sort-wrap">
+          <span className="prop-filter-bar__label">&#x2195; Sort:</span>
+          <select className="prop-filter-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+            <option value="name">Name</option>
+            <option value="status">Status</option>
+            <option value="beds">Beds</option>
+            <option value="newest">Newest</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Card grid */}
+      {filtered.length === 0 ? (
+        <div className="hr-portal__empty">
+          <div className="hr-portal__empty-icon"><Building2 size={28} /></div>
+          <p>{properties.length === 0 ? 'No properties yet. Click "Import Properties" above to add your first.' : 'No properties match your filters.'}</p>
+        </div>
+      ) : (
+        <div className="prop-grid">
+          {filtered.map(prop => {
+            const sc = STATUS_COLORS[prop.status] || STATUS_COLORS.inactive;
+            const isSelected = selectedId === prop.id;
             return (
-              <button
-                key={key}
-                className={`hr-portal__nav-link${activeView === key ? ' hr-portal__nav-link--active' : ''}`}
-                onClick={() => setActiveView(key)}
-              >
-                <Icon size={18} />
-                {v.label}
-              </button>
+              <div key={prop.id} className={`prop-tile${isSelected ? ' prop-tile--selected' : ''}`} onClick={() => selectCard(prop.id)}>
+                <div className="prop-tile__body">
+                  <div className="prop-tile__top">
+                    <span className="prop-tile__name">{prop.name}</span>
+                    <button className="hr-list__delete" onClick={e => remove(prop.id, e)} title="Delete property">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                  {prop.address && (
+                    <div className="prop-tile__addr">
+                      <MapPin size={12} style={{ flexShrink: 0, marginTop: 1 }} /> {prop.address}
+                    </div>
+                  )}
+                  <div className="prop-tile__specs">
+                    <span className="prop-tile__spec"><BedDouble size={14} /> {prop.beds ?? 0} bed{(prop.beds ?? 0) !== 1 ? 's' : ''}</span>
+                    <span className="prop-tile__spec"><Bath size={14} /> {prop.baths ?? 0} bath{(prop.baths ?? 0) !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+                <div className="prop-tile__footer">
+                  <span className="prop-tile__badge" style={{ background: sc.bg, color: sc.color }}>{prop.status}</span>
+                  <span className="prop-tile__chevron">{isSelected ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
+                </div>
+              </div>
             );
           })}
-        </nav>
-      </aside>
-      <section className="hr-portal__content">
-        <ActiveComponent />
-      </section>
+        </div>
+      )}
+
+      {/* Detail panel */}
+      {selected && (
+        <div className="prop-detail-panel">
+          <div className="prop-detail-panel__hdr">
+            <span className="prop-detail-panel__title">{selected.name}</span>
+            <button className="prop-detail-panel__close" onClick={() => setSelectedId(null)}><X size={16} /></button>
+          </div>
+          <div className="prop-tabs">
+            <button className={`prop-tab${detailTab === 'orders' ? ' prop-tab--active' : ''}`} onClick={() => setDetailTab('orders')}>
+              <ShoppingCart size={14} /> Orders ({selected.orders?.length || 0})
+            </button>
+            <button className={`prop-tab${detailTab === 'tasks' ? ' prop-tab--active' : ''}`} onClick={() => setDetailTab('tasks')}>
+              <ClipboardList size={14} /> Setup Tasks ({selected.setupTasks?.length || 0})
+            </button>
+          </div>
+          {detailTab === 'orders' && <OrdersPanel propertyId={selected.id} orders={selected.orders || []} onRefresh={load} />}
+          {detailTab === 'tasks' && <SetupTasksPanel propertyId={selected.id} tasks={selected.setupTasks || []} onRefresh={load} />}
+        </div>
+      )}
     </div>
   );
 }
