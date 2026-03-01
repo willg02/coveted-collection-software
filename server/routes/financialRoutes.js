@@ -120,4 +120,101 @@ router.get('/summary', async (_req, res) => {
   }
 });
 
+// ── Portfolio (property-level breakdown + timeframe filter) ──
+
+router.get('/portfolio', async (req, res) => {
+  try {
+    const { start, end } = req.query; // optional YYYY-MM-DD bounds
+    const dateFilter = {};
+    if (start) dateFilter.gte = start;
+    if (end)   dateFilter.lte = end;
+    const dateWhere = (start || end) ? { date: dateFilter } : {};
+
+    const [properties, expenses, revenues] = await Promise.all([
+      prisma.property.findMany({ orderBy: { name: 'asc' } }),
+      prisma.expense.findMany({ where: dateWhere, include: { property: { select: { id: true, name: true } } } }),
+      prisma.revenue.findMany({ where: dateWhere, include: { property: { select: { id: true, name: true } } } }),
+    ]);
+
+    const totalIncome   = revenues.reduce((s, r) => s + r.amount, 0);
+    const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+    const netProfit     = totalIncome - totalExpenses;
+    const profitMargin  = totalIncome > 0 ? Math.round((netProfit / totalIncome) * 100) : 0;
+
+    // Per-property breakdown
+    const propMap = {};
+    for (const p of properties) propMap[p.id] = { id: p.id, name: p.name, income: 0, expenses: 0 };
+    for (const r of revenues)  if (r.propertyId && propMap[r.propertyId]) propMap[r.propertyId].income   += r.amount;
+    for (const e of expenses)  if (e.propertyId && propMap[e.propertyId]) propMap[e.propertyId].expenses += e.amount;
+    const propertyBreakdown = Object.values(propMap).map(p => ({
+      ...p,
+      netProfit: p.income - p.expenses,
+    }));
+
+    // Expense breakdown by category
+    const expByCategory = {};
+    for (const e of expenses) expByCategory[e.category] = (expByCategory[e.category] || 0) + e.amount;
+
+    // Revenue breakdown by category
+    const revByCategory = {};
+    for (const r of revenues) revByCategory[r.category] = (revByCategory[r.category] || 0) + r.amount;
+
+    // Monthly trend (last 12 months)
+    const monthlyMap = {};
+    for (const r of revenues) {
+      const m = r.date.slice(0, 7);
+      if (!monthlyMap[m]) monthlyMap[m] = { month: m, income: 0, expenses: 0 };
+      monthlyMap[m].income += r.amount;
+    }
+    for (const e of expenses) {
+      const m = e.date.slice(0, 7);
+      if (!monthlyMap[m]) monthlyMap[m] = { month: m, income: 0, expenses: 0 };
+      monthlyMap[m].expenses += e.amount;
+    }
+    const monthly = Object.values(monthlyMap).sort((a, b) => a.month.localeCompare(b.month));
+
+    res.json({
+      totalIncome,
+      totalExpenses,
+      netProfit,
+      profitMargin,
+      propertyBreakdown,
+      expByCategory,
+      revByCategory,
+      monthly,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Employee Performance (for Custom Reports) ──
+
+router.get('/employee-performance', async (req, res) => {
+  try {
+    const { start, end } = req.query;
+    const dateFilter = {};
+    if (start) dateFilter.gte = start;
+    if (end)   dateFilter.lte = end;
+
+    const users = await prisma.user.findMany({ select: { id: true, name: true } });
+    const tasks = await prisma.task.findMany({
+      where: (start || end) ? { createdAt: dateFilter } : {},
+      select: { assigneeId: true, status: true },
+    });
+
+    const perf = users.map(u => {
+      const userTasks = tasks.filter(t => t.assigneeId === u.id);
+      const total     = userTasks.length;
+      const completed = userTasks.filter(t => t.status === 'done').length;
+      const rate      = total > 0 ? Math.round((completed / total) * 100) : 0;
+      return { id: u.id, name: u.name, totalJobs: total, completed, completionRate: rate, avgRating: 0, reviews: 0 };
+    }).filter(u => u.totalJobs > 0);
+
+    res.json(perf);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

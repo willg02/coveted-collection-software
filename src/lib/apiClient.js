@@ -95,6 +95,20 @@ const api = {
   createRevenue: (data) => request('/financials/revenue', { method: 'POST', body: JSON.stringify(data) }),
   deleteRevenue: (id) => request(`/financials/revenue/${id}`, { method: 'DELETE' }),
   getFinancialSummary: () => request('/financials/summary'),
+  getPortfolio: (start, end) => {
+    const params = new URLSearchParams();
+    if (start) params.set('start', start);
+    if (end)   params.set('end', end);
+    const qs = params.toString();
+    return request(`/financials/portfolio${qs ? '?' + qs : ''}`);
+  },
+  getEmployeePerformance: (start, end) => {
+    const params = new URLSearchParams();
+    if (start) params.set('start', start);
+    if (end)   params.set('end', end);
+    const qs = params.toString();
+    return request(`/financials/employee-performance${qs ? '?' + qs : ''}`);
+  },
 
   // Meetings
   getMeetings: () => request('/meetings'),
