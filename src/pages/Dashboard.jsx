@@ -1,9 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShoppingCart,
-  CheckSquare,
-  Mail,
-  AlertTriangle,
   TrendingUp,
   BarChart3,
   Building2,
@@ -11,36 +8,42 @@ import {
   ListTodo,
   MessageSquare,
   Users,
-  Zap,
   Plus,
   FileText,
   Settings,
 } from 'lucide-react';
 import DashboardCard from '../components/DashboardCard';
-import { dashboardStats } from '../data/mockData';
+import api from '../lib/apiClient';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    api.getDashboardStats().then(setStats).catch(() => {});
+  }, []);
+
+  const s = stats ?? {};
 
   return (
     <>
       {/* ---- Top stat row ---- */}
       <div className="dashboard-grid">
-        <StatCard title="Active Orders" value={dashboardStats.activeOrders} />
-        <StatCard title="My Tasks" value={dashboardStats.myTasks} />
-        <StatCard title="Messages" value={dashboardStats.messages} />
-        <StatCard title="Overdue" value={dashboardStats.overdue} />
+        <StatCard title="Active Orders" value={stats == null ? '…' : s.activeOrders} />
+        <StatCard title="My Tasks"     value={stats == null ? '…' : s.myTasks} />
+        <StatCard title="Messages"     value={stats == null ? '…' : s.messages} />
+        <StatCard title="Overdue"      value={stats == null ? '…' : s.overdue} />
       </div>
 
       {/* ---- Quick Access ---- */}
       <div className="quick-access">
         <div className="quick-access__title">Quick Access</div>
         <div className="quick-access__grid">
-          <QuickBtn icon={<Plus size={16} />} label="New Order" />
-          <QuickBtn icon={<Building2 size={16} />} label="Properties" />
-          <QuickBtn icon={<FileText size={16} />} label="Reports" />
-          <QuickBtn icon={<Users size={16} />} label="Team" />
-          <QuickBtn icon={<Settings size={16} />} label="Settings" />
+          <QuickBtn icon={<Plus size={16} />}     label="New Order"   onClick={() => navigate('/properties')} />
+          <QuickBtn icon={<Building2 size={16} />} label="Properties" onClick={() => navigate('/properties')} />
+          <QuickBtn icon={<FileText size={16} />}  label="Reports"    onClick={() => navigate('/hr')} />
+          <QuickBtn icon={<Users size={16} />}     label="Team"       onClick={() => navigate('/hr')} />
+          <QuickBtn icon={<Settings size={16} />}  label="Settings"   onClick={() => navigate('/hr')} />
         </div>
       </div>
 
@@ -70,8 +73,8 @@ export default function Dashboard() {
           title="New Unit Development"
           subtitle="Manage property orders, setup tasks, and SOPs"
           metrics={[
-            { label: 'Active Orders', value: dashboardStats.activeOrders },
-            { label: 'Properties', value: 2 },
+            { label: 'Active Orders', value: stats == null ? '…' : s.activeOrders },
+            { label: 'Properties',    value: stats == null ? '…' : s.properties },
           ]}
           ctaLabel="Open New Unit Development"
           onCtaClick={() => navigate('/properties')}
@@ -83,11 +86,11 @@ export default function Dashboard() {
           title="Time Tracking"
           subtitle="Track hours, manage schedules and timesheets"
           metrics={[
-            { label: 'My Hours Today', value: '0h' },
-            { label: 'This Week', value: '0h' },
+            { label: 'My Hours Today', value: stats == null ? '…' : `${s.hoursToday}h` },
+            { label: 'This Week',      value: stats == null ? '…' : `${s.hoursThisWeek}h` },
           ]}
           ctaLabel="Open Time Tracking"
-          onCtaClick={() => navigate('/operations')}
+          onCtaClick={() => navigate('/hr')}
         />
 
         <DashboardCard
@@ -96,11 +99,11 @@ export default function Dashboard() {
           title="Tasks"
           subtitle="Manage and track team tasks with AI insights"
           metrics={[
-            { label: 'My Active Tasks', value: 0 },
-            { label: 'Overdue', value: 0 },
+            { label: 'My Active Tasks', value: stats == null ? '…' : s.myTasks },
+            { label: 'Overdue',         value: stats == null ? '…' : s.overdue },
           ]}
           ctaLabel="Open Tasks"
-          onCtaClick={() => navigate('/operations')}
+          onCtaClick={() => navigate('/hr')}
         />
 
         <DashboardCard
@@ -119,8 +122,8 @@ export default function Dashboard() {
           title="HR & Communications"
           subtitle="Employee management, performance, and communications"
           metrics={[
-            { label: 'Unread Messages', value: 0 },
-            { label: 'Pending Leave', value: 0 },
+            { label: 'Unread Messages', value: stats == null ? '…' : s.messages },
+            { label: 'Pending Leave',   value: stats == null ? '…' : s.pendingLeave },
           ]}
           ctaLabel="Open HR & Communications"
           onCtaClick={() => navigate('/hr')}
@@ -141,9 +144,9 @@ function StatCard({ title, value }) {
   );
 }
 
-function QuickBtn({ icon, label }) {
+function QuickBtn({ icon, label, onClick }) {
   return (
-    <button className="quick-access__btn">
+    <button className="quick-access__btn" onClick={onClick}>
       {icon}
       {label}
     </button>

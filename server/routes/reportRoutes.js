@@ -94,4 +94,79 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/reports/dashboard
+// Lightweight stat snapshot for the dashboard top cards + feature card metrics
+router.get('/dashboard', async (req, res) => {
+  try {
+    const today     = new Date().toISOString().slice(0, 10);
+    const weekStart = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() - d.getDay());
+      return d.toISOString().slice(0, 10);
+    })();
+
+    const [
+      activeOrders,
+      propertyCount,
+      myTasks,
+      overdueCount,
+      unreadMessages,
+      pendingLeave,
+      todayEntries,
+      weekEntries,
+    ] = await Promise.all([
+      // Orders that haven't been installed/delivered yet
+      prisma.propertyOrder.count({
+        where: { status: { in: ['pending', 'ordered'] } },
+      }),
+      prisma.property.count(),
+      // My active (non-done) tasks
+      prisma.task.count({
+        where: { assigneeId: req.user.id, status: { not: 'done' } },
+      }),
+      // My overdue tasks
+      prisma.task.count({
+        where: { assigneeId: req.user.id, status: { not: 'done' }, dueDate: { lt: today } },
+      }),
+      // My unread messages
+      prisma.message.count({
+        where: { receiverId: req.user.id, read: false },
+      }),
+      // Pending leave (all if manager/admin, own if employee)
+      prisma.leaveRequest.count({
+        where: {
+          status: 'pending',
+          ...(req.user.role === 'admin' || req.user.role === 'manager' ? {} : { userId: req.user.id }),
+        },
+      }),
+      // Hours logged today
+      prisma.timeEntry.findMany({
+        where: { userId: req.user.id, date: today },
+        select: { hours: true },
+      }),
+      // Hours logged this week
+      prisma.timeEntry.findMany({
+        where: { userId: req.user.id, date: { gte: weekStart } },
+        select: { hours: true },
+      }),
+    ]);
+
+    const hoursToday    = Math.round(todayEntries.reduce((s, e) => s + e.hours, 0) * 100) / 100;
+    const hoursThisWeek = Math.round(weekEntries.reduce((s, e) => s + e.hours, 0) * 100) / 100;
+
+    res.json({
+      activeOrders,
+      properties: propertyCount,
+      myTasks,
+      overdue: overdueCount,
+      messages: unreadMessages,
+      pendingLeave,
+      hoursToday,
+      hoursThisWeek,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

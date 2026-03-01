@@ -116,6 +116,7 @@ const api = {
 
   // Reports
   getReports: () => request('/reports'),
+  getDashboardStats: () => request('/reports/dashboard'),
 
   // Legacy
   getProperties: () => request('/properties'),
