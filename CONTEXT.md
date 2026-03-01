@@ -51,7 +51,7 @@
 | `/hr` | HR.jsx | 14 views, fully live |
 | `/properties` | Properties.jsx | Card grid, search/filter, beds/baths, orders & setup tasks |
 | `/operations` | Operations.jsx | Functional list UI (schedule + SOPs) — redesign pending |
-| `/sales` | Sales.jsx | Lead kanban pipeline |
+| `/sales` | Sales.jsx | Sales & Market Analytics — 7 tabs: AI Pricing, Analysis, Training Data, History, Market Alerts, Competitive, Data Audit |
 | `/financials` | Financials.jsx | Expenses + revenue CRUD |
 | `/chat` | Chat.jsx | Rule-based keyword bots (ops + HR) — AI upgrade pending |
 | `/login` | Login.jsx | JWT login/register |
@@ -85,3 +85,4 @@ prisma migrate dev # Run new migrations
 
 ## Changelog
 - **2026-03-01** — Financials redesign: 3-tab layout (Portfolio Overview, Payment & Payroll, Custom Reports), portfolio endpoint with property-level breakdown, employee performance report with CSV export
+- **2026-03-01** — Sales redesign: replaced lead pipeline/kanban with "Sales & Market Analytics" page — 7 tabs (AI Pricing, Analysis, Training Data, History, Market Alerts, Competitive, Data Audit), localStorage for analysis history, SVG occupancy chart, stub AI features

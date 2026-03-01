@@ -1974,6 +1974,49 @@ button {
 .fin-empty { color: #94a3b8; font-size: 13px; text-align: center; padding: 24px 0; }
 
 /* ═══════════════════════════════════════════
+   SALES & MARKET ANALYTICS PAGE
+   ═══════════════════════════════════════════ */
+.sales-page-title { font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 2px; }
+.sales-page-sub   { font-size: 14px; color: #64748b; margin: 0 0 18px; }
+.sales-section-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+.sales-section-sub   { font-size: 13px; color: #64748b; margin: 0 0 16px; }
+
+.sales-analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .sales-analysis-grid { grid-template-columns: 1fr; } }
+
+.sales-form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sales-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media (max-width: 600px) {
+  .sales-form-row-2, .sales-form-row-3 { grid-template-columns: 1fr; }
+}
+
+.sales-field-label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+
+.sales-amenities { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 14px; }
+.sales-checkbox  { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #475569; cursor: pointer; }
+.sales-checkbox input[type=checkbox] { accent-color: #7c3aed; width: 15px; height: 15px; cursor: pointer; }
+
+.sales-whatif { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 10px 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+
+.sales-info-box { margin: 16px 0; padding: 16px; background: #f0f4ff; border: 1px solid #c7d2fe; border-radius: 10px; }
+.sales-info-box__title { font-size: 14px; font-weight: 600; color: #3730a3; margin: 0 0 6px; }
+.sales-info-box__text  { font-size: 13px; color: #4338ca; line-height: 1.6; margin: 0; }
+
+.sales-history-list { display: flex; flex-direction: column; gap: 10px; }
+.sales-history-card {
+  padding: 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+  cursor: pointer; transition: border-color 0.15s;
+}
+.sales-history-card:hover { border-color: #8b5cf6; }
+
+.sales-chart-wrap { background: #fafbff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 8px 4px; margin-bottom: 16px; }
+
+.sales-season-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; text-transform: capitalize; }
+.sales-season-badge--peak    { background: #fef3c7; color: #92400e; }
+.sales-season-badge--normal  { background: #f0fdf4; color: #15803d; }
+.sales-season-badge--off     { background: #eff6ff; color: #1d4ed8; }
+
+/* ═══════════════════════════════════════════
    CHAT PAGE
    ═══════════════════════════════════════════ */
 .chat-window {

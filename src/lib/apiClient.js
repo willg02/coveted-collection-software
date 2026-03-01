@@ -87,6 +87,9 @@ const api = {
   updateLead: (id, data) => request(`/leads/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteLead: (id) => request(`/leads/${id}`, { method: 'DELETE' }),
 
+  // Properties (for sales analysis property picker)
+  // getPropertiesV2 already defined above
+
   // Financials
   getExpenses: () => request('/financials/expenses'),
   createExpense: (data) => request('/financials/expenses', { method: 'POST', body: JSON.stringify(data) }),
